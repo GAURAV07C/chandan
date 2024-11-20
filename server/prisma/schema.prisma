@@ -1,0 +1,73 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  user
+  editor   // Changed designer to editor
+}
+
+enum Status {
+  available
+  unavailable
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(user)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  chats     Chat[]   // Keep as is
+  videos    Video[]  // Keep as is
+  editor    Editor?  // Changed from 'designer' to 'editor'
+}
+
+model Editor {   // Changed from 'Designer' to 'Editor'
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  description String?  // Optional field for editor description
+  specialty   String?  // Optional field for editor specialty
+  status      Status   @default(available)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  chats       Chat[]   // Relation with Chat model
+}
+
+model Chat {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String    @db.ObjectId
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  editorId   String    @db.ObjectId
+  editor     Editor    @relation(fields: [editorId], references: [id], onDelete: Cascade)
+  messages   Message[] // Relation with Message model
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Message {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  chatId    String   @db.ObjectId
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId  String   @db.ObjectId
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model Video {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  filename  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
